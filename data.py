@@ -6,11 +6,12 @@ import pandas as pd
 import numpy as np
 
 class SignalDataset(Dataset):
-    def __init__(self, path, window_length, step):
+    def __init__(self, path, window_length, step, n_step):
         self.path = path
         self.window_length = window_length
         self.step = step
         self.df = pd.read_csv(self.path)
+        self.n_step = n_step
 
     def __len__(self):
         return len(self.df)
@@ -27,8 +28,8 @@ class SignalDataset(Dataset):
         while i + self.window_length < signal_length:
             data.append(signal[i:i + self.window_length])
             i += self.step
-        
-        data = torch.DoubleTensor(data)
+
+        enc_input_all = torch.FloatTensor(data)
 
         parameter = self.df.loc[index, 'key_parameter']
         parameter = parameter[2:-2]
@@ -42,9 +43,23 @@ class SignalDataset(Dataset):
 
         key_parameter = [parameter_tk, parameter_ak]
 
-        return data, key_parameter
+        key_parameter_combine = []
 
+        for i in range(len(key_parameter[0])):
+            key_parameter_combine.append((key_parameter[0][i], key_parameter[1][i]))
+
+        for i in range(len(key_parameter_combine), self.n_step):
+            key_parameter_combine.append((0 ,0))
+
+        key_parameter_combine.insert(0, (-255, -255))
+        dec_input_all = torch.FloatTensor(key_parameter_combine)
+
+        key_parameter_combine.pop(0)
+        key_parameter_combine.append((255, 255))
+        dec_output_all = torch.FloatTensor(key_parameter_combine)
+
+        return enc_input_all, dec_input_all, dec_output_all
 
 if __name__ == '__main__':
-    dataset = SignalDataset('./data.csv', 5, 2)
-    print(dataset[10][1])
+    dataset = SignalDataset('./data.csv', 5, 2, 10)
+    print(dataset[15][0])

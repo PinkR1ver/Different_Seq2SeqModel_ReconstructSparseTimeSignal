@@ -72,11 +72,10 @@ def sampling_signal(signal, sample_rate, specificity):
 if __name__ == '__main__':
 
     # Test function and plot
-    '''
-    k = 5
-    length = 5
+    k = 4
+    length = 1
     amplitude_max = 2
-    cutoff_freq = 10
+    cutoff_freq = 5
     specificity = 10000
 
     tk, ak, y, yy = simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity)
@@ -97,8 +96,8 @@ if __name__ == '__main__':
     plt.figure()
     plt.stem(np.linspace(0, length, sample_rate * length + 1), sample_signal)
     plt.show()
-    '''
 
+    '''
     # Generate training data
 
     data_size = 10000
@@ -124,3 +123,4 @@ if __name__ == '__main__':
         df = pd.concat([df, df_tmp])
 
     df.to_csv('data.csv', index=False)
+    '''
