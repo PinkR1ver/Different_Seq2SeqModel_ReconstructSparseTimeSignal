@@ -1,5 +1,4 @@
 import random
-import pylab
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -20,7 +19,7 @@ def plot_dirac(tk, ak, length, color='red', marker='*', ax=None, label=''):
     plt.xlim([0, length]
 '''
 
-def simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity=10000):
+def simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity, tau):
     # Generate random parameter to express diracs
     parameter_pair = []
 
@@ -39,7 +38,8 @@ def simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity=10000):
         ak.append(parameter[1])
 
     # Generate signal
-    x = np.linspace(0, length, specificity * length + 1)
+    end_point = length * tau
+    x = np.linspace(0, end_point, int(specificity * length * tau) + 1)
     y = np.zeros(x.size)
 
     '''
@@ -47,14 +47,27 @@ def simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity=10000):
         y += amplitude * 2 * cut_off_freq * np.sin((2 * cut_off_freq * x) - position) / (2 * cut_off_freq * x)
     '''
     for i in range(len(tk)):
-        y[int(tk[i] * specificity)] = ak[i]
+        for j in range(tau):
+            y[int((tk[i] * specificity)) + int(j * specificity * length)] = ak[i]
 
     # After low-pass signal
     yy = np.zeros(x.size)
 
-    for i in range(len(tk)):
+
+    new_tk = []
+    new_ak = []
+    for freq in range(tau):
+        for i in tk:
+            new_tk.append(i + freq * length)
+    
+    for freq in range(tau):
+        for i in ak:
+            new_ak.append(i)
+            
+
+    for i in range(len(new_tk)):
         for j in range(len(x)):
-            yy[j] += ak[i] * np.sinc((2 * np.pi * cutoff_freq  * (x[j] - tk[i])))
+            yy[j] += new_ak[i] * np.sinc((2 * np.pi * cutoff_freq  * (x[j] - new_tk[i])))
 
     return tk, ak, y, yy
 
@@ -70,17 +83,19 @@ def sampling_signal(signal, sample_rate, specificity):
 
 
 if __name__ == '__main__':
-
+    
     # Test function and plot
-    k = 4
-    length = 1
-    amplitude_max = 2
-    cutoff_freq = 5
+    k = 1
+    length = 0.02
+    amplitude_max = 5
+    cutoff_freq = 60
     specificity = 10000
+    sample_rate = 30
+    tau = 1000
 
-    tk, ak, y, yy = simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity)
+    tk, ak, y, yy = simulate_dirac(k, length, amplitude_max, cutoff_freq, specificity, tau)
 
-    x = np.linspace(0, length, specificity * length + 1)
+    x = np.linspace(0, length * tau, int(specificity * length * tau) + 1)
 
     plt.figure()
     plt.stem(x, y)
@@ -90,11 +105,10 @@ if __name__ == '__main__':
     plt.plot(x, yy)
     plt.show()
 
-    sample_rate = 5
     sample_signal = sampling_signal(yy, sample_rate, specificity)
 
     plt.figure()
-    plt.stem(np.linspace(0, length, sample_rate * length + 1), sample_signal)
+    plt.stem(np.linspace(0, length * tau, int(sample_rate * length * tau) + 1), sample_signal)
     plt.show()
 
     '''
@@ -102,11 +116,11 @@ if __name__ == '__main__':
 
     data_size = 10000
 
-    length = 5
+    length = 0.2
     amplitude_max = 5
-    cutoff_freq = 2
+    cutoff_freq = 10
     specificity = 10000
-    sample_rate = 10
+    sample_rate = 3
 
     df = pd.DataFrame(data={}, columns=['signal', 'key_parameter'])
 
